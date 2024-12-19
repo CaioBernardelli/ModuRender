@@ -1,64 +1,80 @@
 package br.edu.ifpb.pps.projeto.renderspring.modurender.repository;
 
-
-import br.edu.ifpb.pps.projeto.renderspring.modurender.core.DatabaseManager;
-import br.edu.ifpb.pps.projeto.renderspring.modurender.core.RelatedEntity;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.JpaRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import org.springframework.stereotype.Repository;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.List;
 
 @Repository
 public class GenericRepository<T extends BaseEntity> {
 
-    private final DatabaseManager databaseManager;
+    @PersistenceContext
+    private EntityManager entityManager;
 
-    public GenericRepository(DatabaseManager databaseManager) {
-        this.databaseManager = databaseManager;
+    private final Class<T> entityClass;
+
+    // Construtor com tipo da entidade
+    public GenericRepository(Class<T> entityClass) {
+        this.entityClass = entityClass;
     }
 
-    public void save(T entity) {
-        try (Connection connection = databaseManager.getConnection()) {
-            String sql = "INSERT INTO " + entity.getTableName() + " VALUES (?)"; // Exemplo simplificado
-            PreparedStatement statement = connection.prepareStatement(sql);
-            // Configurar parâmetros dinamicamente...
-            statement.executeUpdate();
-        } catch (Exception e) {
-            e.printStackTrace();
+    /**
+     * Salva ou atualiza a entidade no banco.
+     */
+    public T save(T entity) {
+        if (entity.getId() == null) {
+            entityManager.persist(entity);
+        } else {
+            entityManager.merge(entity);
+        }
+        return entity;
+    }
+
+    /**
+     * Busca uma entidade pelo ID.
+     */
+    public T findById(Long id) {
+        return entityManager.find(entityClass, id);
+    }
+
+    /**
+     * Remove uma entidade pelo ID.
+     */
+    public void delete(Long id) {
+        T entity = findById(id);
+        if (entity != null) {
+            entityManager.remove(entity);
         }
     }
 
-    public T findById(Long id, Class<T> clazz) {
-        try (Connection connection = databaseManager.getConnection()) {
-            String sql = "SELECT * FROM " + clazz.getSimpleName() + " WHERE id = ?";
-            PreparedStatement statement = connection.prepareStatement(sql);
-            statement.setLong(1, id);
-            ResultSet resultSet = statement.executeQuery();
-            if (resultSet.next()) {
-                T entity = clazz.getDeclaredConstructor().newInstance();
-                entity.setId(resultSet.getLong("id"));
-                // Mapear outros campos...
-                return entity;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
+    /**
+     * Lista todas as entidades.
+     */
+    public List<T> findAll() {
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<T> query = builder.createQuery(entityClass);
+        query.select(query.from(entityClass));
+        return entityManager.createQuery(query).getResultList();
     }
 
-    public void delete(Long id, String tableName) {
-        try (Connection connection = databaseManager.getConnection()) {
-            String sql = "DELETE FROM " + tableName + " WHERE id = ?";
-            PreparedStatement statement = connection.prepareStatement(sql);
-            statement.setLong(1, id);
-            statement.executeUpdate();
-        } catch (Exception e) {
-            e.printStackTrace();
+    /**
+     * Busca com filtros dinâmicos.
+     * @param filters Lista de filtros (ex.: "nome = John").
+     */
+    public List<T> findWithFilters(List<Predicate> filters) {
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<T> query = builder.createQuery(entityClass);
+        Root<T> root = query.from(entityClass);
+
+        // Aplica os filtros dinamicamente
+        if (!filters.isEmpty()) {
+            query.where(builder.and(filters.toArray(new Predicate[0])));
         }
+
+        return entityManager.createQuery(query).getResultList();
     }
 }

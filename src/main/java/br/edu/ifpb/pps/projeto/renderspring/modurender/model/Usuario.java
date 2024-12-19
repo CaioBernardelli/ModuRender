@@ -1,9 +1,7 @@
 package br.edu.ifpb.pps.projeto.renderspring.modurender.model;
 
 import br.edu.ifpb.pps.projeto.renderspring.modurender.repository.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 @Entity
 public class Usuario extends BaseEntity {
@@ -19,17 +17,20 @@ public class Usuario extends BaseEntity {
 
     @Column(nullable = false)
     private String senha;
-    @Id
-    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "course_id", nullable = true) // Permite que o curso seja nulo
+    private Course curso;
 
     // Construtores
     public Usuario() {}
 
-    public Usuario(String nome, String email, Integer idade, String senha) {
+    public Usuario(String nome, String email, Integer idade, String senha, Course curso) {
         this.nome = nome;
         this.email = email;
         this.idade = idade;
         this.senha = senha;
+        this.curso = curso;
     }
 
     // Getters e Setters
@@ -65,16 +66,18 @@ public class Usuario extends BaseEntity {
         this.senha = senha;
     }
 
+    public Course getCurso() {
+        return curso;
+    }
+
+    public void setCurso(Course curso) {
+        this.curso = curso;
+    }
+
     @Override
     public String getTableName() {
         return "usuario"; // Nome da tabela no banco
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
 
-    public Long getId() {
-        return id;
-    }
 }

@@ -1,9 +1,7 @@
 package br.edu.ifpb.pps.projeto.renderspring.modurender.model;
 
 import br.edu.ifpb.pps.projeto.renderspring.modurender.repository.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
@@ -15,8 +13,8 @@ public class Notification extends BaseEntity {
 
     @Column(nullable = false)
     private LocalDateTime date;
-    @Id
-    private Long id;
+
+
 
     // Construtores
     public Notification() {}
@@ -48,11 +46,5 @@ public class Notification extends BaseEntity {
         return "notification"; // Nome da tabela no banco
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
 
-    public Long getId() {
-        return id;
-    }
 }

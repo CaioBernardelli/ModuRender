@@ -1,48 +1,51 @@
 package br.edu.ifpb.pps.projeto.renderspring.modurender.config;
 
-import br.edu.ifpb.pps.projeto.renderspring.modurender.core.DatabaseManager;
 import br.edu.ifpb.pps.projeto.renderspring.modurender.core.TableInitializer;
-import br.edu.ifpb.pps.projeto.renderspring.modurender.repository.BaseEntity;
-import br.edu.ifpb.pps.projeto.renderspring.modurender.repository.GenericRepository;
 import br.edu.ifpb.pps.projeto.renderspring.modurender.utils.Logger;
-import br.edu.ifpb.pps.projeto.renderspring.modurender.utils.Validator;
 import br.edu.ifpb.pps.projeto.renderspring.modurender.utils.SessionManager;
-import org.springframework.beans.factory.annotation.Value;
+import br.edu.ifpb.pps.projeto.renderspring.modurender.utils.Validator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import javax.sql.DataSource;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.jdbc.DataSourceBuilder;
 
 @Configuration
 public class AppConfig {
 
-    // Propriedades externas para configurar o DatabaseManager
-    @Bean
-    public DatabaseManager databaseManager() {
-        DatabaseManager databaseManager = new DatabaseManager();
-        databaseManager.setUrl("jdbc:postgresql://localhost:5432/teste30");
-        databaseManager.setUser("postgres");
-        databaseManager.setPassword("12345");
-        return databaseManager;
-    }
+    // Carrega propriedades do banco de dados a partir do application.properties
+    @Value("${spring.datasource.url}")
+    private String databaseUrl;
 
+    @Value("${spring.datasource.username}")
+    private String databaseUser;
+
+    @Value("${spring.datasource.password}")
+    private String databasePassword;
 
     /**
-     * Configuração do TableInitializer para criar tabelas no banco de dados.
+     * Configura o DataSource gerenciado pelo Spring.
      */
     @Bean
-    public TableInitializer tableInitializer(DatabaseManager databaseManager) {
-        return new TableInitializer(databaseManager);
+    public DataSource dataSource() {
+        return DataSourceBuilder.create()
+                .url(databaseUrl)
+                .username(databaseUser)
+                .password(databasePassword)
+                .build();
     }
 
     /**
-     * Configuração do GenericRepository para fornecer métodos genéricos de persistência.
+     * Inicializador para criar tabelas no banco de dados.
      */
     @Bean
-    public <T extends BaseEntity> GenericRepository<T> genericRepository(DatabaseManager databaseManager) {
-        return new GenericRepository<>(databaseManager);
+    public TableInitializer tableInitializer(DataSource dataSource) {
+        return new TableInitializer(dataSource);
     }
 
     /**
-     * Configuração do Logger para suporte a logs no framework.
+     * Logger para registro de eventos.
      */
     @Bean
     public Logger logger() {
@@ -50,7 +53,7 @@ public class AppConfig {
     }
 
     /**
-     * Configuração do Validator para validação de dados.
+     * Validator para validação de dados.
      */
     @Bean
     public Validator validator() {
@@ -58,7 +61,7 @@ public class AppConfig {
     }
 
     /**
-     * Configuração do SessionManager para gerenciar sessões de usuário.
+     * Gerenciador de sessões.
      */
     @Bean
     public SessionManager sessionManager() {
@@ -66,13 +69,17 @@ public class AppConfig {
     }
 
     /**
-     * Configuração final do framework, inicializando tabelas e registrando logs.
+     * Inicializador do framework, incluindo criação de tabelas e logs de inicialização.
      */
     @Bean
     public FrameworkInitializer frameworkInitializer(TableInitializer tableInitializer, Logger logger) {
         return () -> {
-            tableInitializer.createTables();
-            logger.info("Framework iniciado com sucesso!");
+            try {
+                tableInitializer.createTables();
+                logger.info("Framework iniciado com sucesso!");
+            } catch (Exception e) {
+                logger.error("Erro durante a inicialização do framework: " + e.getMessage());
+            }
         };
     }
 }

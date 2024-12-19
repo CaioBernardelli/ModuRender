@@ -1,21 +1,22 @@
 package br.edu.ifpb.pps.projeto.renderspring.modurender.core;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.Statement;
 
 public class TableInitializer {
 
-    private final DatabaseManager databaseManager;
+    private final DataSource dataSource;
 
-    public TableInitializer(DatabaseManager databaseManager) {
-        this.databaseManager = databaseManager;
+    public TableInitializer(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
      * Criação das tabelas no banco de dados.
      */
     public void createTables() {
-        try (Connection connection = databaseManager.getConnection()) {
+        try (Connection connection = dataSource.getConnection()) {
             Statement statement = connection.createStatement();
 
             // SQL para criar a tabela 'usuario'
@@ -52,7 +53,7 @@ public class TableInitializer {
             String createSessionTable = """
                 CREATE TABLE IF NOT EXISTS sessions (
                     id SERIAL PRIMARY KEY,
-                    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    user_id INT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
                     session_token VARCHAR(255) NOT NULL UNIQUE,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     expires_at TIMESTAMP

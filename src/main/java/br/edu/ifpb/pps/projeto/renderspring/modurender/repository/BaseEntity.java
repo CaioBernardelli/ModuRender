@@ -1,22 +1,37 @@
 package br.edu.ifpb.pps.projeto.renderspring.modurender.repository;
 
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
 
 @MappedSuperclass
 public abstract class BaseEntity {
+    @Setter
+    @Getter
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Geração automática do ID
     private Long id;
 
-    public Long getId() {
-        return id;
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 
-    public abstract String getTableName(); // Nome da tabela no banco
+    public abstract String getTableName();
+
+
 }
+
 
